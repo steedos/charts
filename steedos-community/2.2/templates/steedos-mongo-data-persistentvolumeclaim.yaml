@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: steedos-mongo-data
+  name: steedos-mongo-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.services.mongodb.storage }}
+  storageClassName: {{ .Values.services.mongodb.storageClass }}
+status: {}
