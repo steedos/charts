@@ -12,34 +12,45 @@ image:
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+storageClass: ""
 
 services:
   steedos:
     config:
-      root_url: "http://localhost:3000"
-      store: "local"
-      folder: "/app/storage"
+      root_url: "https://csc.dev.steedos.cn"
       cacher: "redis://redis:6379"
       transporter: "redis://redis:6379/2"
       mongo_url: "mongodb://mongodb:27017/steedos"
       mongo_oplog_url: "mongodb://mongodb:27017/local"
-    storageClass: ""
+      enable_password_login: "yes"
+      cfs:
+        store: "local"
+        local:
+          folder: "/app/storage"
+        aws:
+          endpoint: ""
+          bucket: ""
+          accessKeyId: ""
+          secretAccessKey: ""
+          s3ForcePathStyle: "true"
+          signatureVersion: "v4"
+          region: ""
     data_storage: "1Gi"
-    installed_packages_storage: "1Gi"
 
   redis:
-    image: "redis:6.2"
+    image: "ecr.aws.steedos.cn/dockerhub/bitnami/redis:6.2"
   
   mongodb:
     env:
+      allow_empty_password: "yes"
+      mongodb_enable_journal: "true"
       mongodb_advertised_hostname: "mongodb"
       mongodb_initial_primary_host: "mongodb"
       mongodb_replica_set_mode: "primary"
       mongodb_replica_set_name: "steedos"
-    image: "bitnami/mongodb:4.4"
+    image: "ecr.aws.steedos.cn/dockerhub/bitnami/mongodb:4.4"
     storage: "2Gi"
     data_path: "/bitnami"
-    storageClass: ""
 
 
 serviceAccount:
@@ -69,8 +80,8 @@ service:
   port: 3000
 
 ingress:
-  enabled: false
-  className: ""
+  enabled: true
+  className: "nginx"
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
@@ -79,10 +90,10 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  tls:
+    - secretName: steedos-tls-secret
+      hosts:
+        - chart-example.local
     
 
 resources: {}

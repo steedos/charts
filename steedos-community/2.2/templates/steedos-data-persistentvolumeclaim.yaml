@@ -11,5 +11,5 @@ spec:
   resources:
     requests:
       storage: {{ .Values.services.steedos.data_storage }}
-  storageClassName: {{ .Values.services.steedos.storageClass }}
+  storageClassName: {{ .Values.storageClass }}
 status: {}

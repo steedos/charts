@@ -45,11 +45,11 @@ spec:
       containers:
         - env:
             - name: ALLOW_EMPTY_PASSWORD
-              value: "yes"
+              value: {{ quote .Values.services.mongodb.env.allow_empty_password }}
             - name: MONGODB_ADVERTISED_HOSTNAME
               value: {{ .Values.services.mongodb.env.mongodb_advertised_hostname }}
             - name: MONGODB_ENABLE_JOURNAL
-              value: "true"
+              value: {{ quote .Values.services.mongodb.env.mongodb_enable_journal }}
             - name: MONGODB_INITIAL_PRIMARY_HOST
               value: {{ .Values.services.mongodb.env.mongodb_initial_primary_host }}
             - name: MONGODB_REPLICA_SET_MODE

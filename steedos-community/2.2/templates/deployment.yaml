@@ -38,20 +38,41 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            {{- with .Values.services.steedos.config }}
             - name: ROOT_URL
-              value: {{ .Values.services.steedos.config.root_url }}
+              value: {{ .root_url }}
             - name: STEEDOS_CFS_STORE
-              value: {{ .Values.services.steedos.config.store }}
+              value: {{ .cfs.store }}
             - name: STEEDOS_STORAGE_DIR
-              value:  {{ .Values.services.steedos.config.folder }}
+              value:  {{ .cfs.local.folder }}
             - name: CACHER
-              value: {{ .Values.services.steedos.config.cacher }}
+              value: {{ .cacher }}
             - name: MONGO_URL
-              value: {{ .Values.services.steedos.config.mongo_url }}
+              value: {{ .mongo_url }}
             - name: MONGO_OPLOG_URL
-              value: {{ .Values.services.steedos.config.mongo_oplog_url }}
+              value: {{ .mongo_oplog_url }}
             - name: TRANSPORTER
-              value: {{ .Values.services.steedos.config.transporter }}
+              value: {{ .transporter }}
+            - name: STEEDOS_TENANT_ENABLE_PASSWORD_LOGIN
+              value: {{ quote .enable_password_login }}
+            {{- if eq .cfs.store "S3" }}
+            - name: STEEDOS_CFS_AWS_S3_ENDPOINT
+              value: {{ .cfs.aws.endpoint }}
+            - name: STEEDOS_CFS_AWS_S3_BUCKET
+              value: {{ .cfs.aws.bucket }}
+            - name: STEEDOS_CFS_AWS_S3_ACCESS_KEY_ID
+              value: {{ .cfs.aws.accessKeyId }}
+            - name: STEEDOS_CFS_AWS_S3_SECRET_ACCESS_KEY
+              value: {{ .cfs.aws.secretAccessKey }}
+            - name: STEEDOS_CFS_AWS_S3_FORCE_PATH_STYLE
+              value: {{ quote .cfs.aws.s3ForcePathStyle }}
+            - name: STEEDOS_CFS_AWS_S3_SIGNATURE_VERSION
+              value: {{ .cfs.aws.signatureVersion }}
+            - name: STEEDOS_CFS_AWS_S3_REGION
+              value: {{ .cfs.aws.region }}
+            {{- end }}
+            {{- end }}
+            
           livenessProbe:
             exec:
               command:
@@ -69,17 +90,18 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - mountPath: /app/.steedos
-              name: steedos-installed-packages
+              name: steedos-data
+              subPath: installed-packages
+            {{- if eq .Values.services.steedos.config.cfs.store "local" }}
             - mountPath: /app/storage
               name: steedos-data
+              subPath: storage
+            {{- end }}
           args:
             - yarn
             - start
       restartPolicy: Always
       volumes:
-        - name: steedos-installed-packages
-          persistentVolumeClaim:
-            claimName: steedos-installed-packages
         - name: steedos-data
           persistentVolumeClaim:
             claimName: steedos-data

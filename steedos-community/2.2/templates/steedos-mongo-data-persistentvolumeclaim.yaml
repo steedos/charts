@@ -11,5 +11,5 @@ spec:
   resources:
     requests:
       storage: {{ .Values.services.mongodb.storage }}
-  storageClassName: {{ .Values.services.mongodb.storageClass }}
+  storageClassName: {{ .Values.storageClass }}
 status: {}
