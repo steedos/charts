@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "steedos-enterprise.fullname" . }}
+  labels:
+    {{- include "steedos-enterprise.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "steedos-enterprise.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "steedos-enterprise.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "steedos-enterprise.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: init-myservice
+          image: curlimages/curl:7.68.0
+          command: ['sh', '-c', 'until curl mongodb:27017; do echo waiting for mongodb; sleep 2; done;']
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- with .Values.services.steedos.config }}
+            - name: ROOT_URL
+              value: {{ .root_url }}
+            - name: STEEDOS_CFS_STORE
+              value: {{ .cfs.store }}
+            - name: STEEDOS_STORAGE_DIR
+              value:  {{ .cfs.local.folder }}
+            - name: CACHER
+              value: {{ .cacher }}
+            - name: MONGO_URL
+              value: {{ .mongo_url }}
+            - name: MONGO_OPLOG_URL
+              value: {{ .mongo_oplog_url }}
+            - name: TRANSPORTER
+              value: {{ .transporter }}
+            - name: STEEDOS_TENANT_ENABLE_PASSWORD_LOGIN
+              value: {{ quote .enable_password_login }}
+            - name: STEEDOS_INITIAL_PACKAGES
+              value: {{ quote .initial_packages }}
+            {{- if eq .cfs.store "S3" }}
+            - name: STEEDOS_CFS_AWS_S3_ENDPOINT
+              value: {{ .cfs.aws.endpoint }}
+            - name: STEEDOS_CFS_AWS_S3_BUCKET
+              value: {{ .cfs.aws.bucket }}
+            - name: STEEDOS_CFS_AWS_S3_ACCESS_KEY_ID
+              value: {{ .cfs.aws.accessKeyId }}
+            - name: STEEDOS_CFS_AWS_S3_SECRET_ACCESS_KEY
+              value: {{ .cfs.aws.secretAccessKey }}
+            - name: STEEDOS_CFS_AWS_S3_FORCE_PATH_STYLE
+              value: {{ quote .cfs.aws.s3ForcePathStyle }}
+            - name: STEEDOS_CFS_AWS_S3_SIGNATURE_VERSION
+              value: {{ .cfs.aws.signatureVersion }}
+            - name: STEEDOS_CFS_AWS_S3_REGION
+              value: {{ .cfs.aws.region }}
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:3000/api/health
+            failureThreshold: 3
+            periodSeconds: 60
+            timeoutSeconds: 10
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /app/.steedos
+              name: steedos-data
+              subPath: installed-packages
+            {{- if eq .Values.services.steedos.config.cfs.store "local" }}
+            - mountPath: /app/storage
+              name: steedos-data
+              subPath: storage
+            {{- end }}
+          args:
+            - yarn
+            - start
+      restartPolicy: Always
+      volumes:
+        - name: steedos-data
+          persistentVolumeClaim:
+            claimName: steedos-data
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
