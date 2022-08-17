@@ -25,7 +25,7 @@ services:
       mongo_url: "mongodb://mongodb:27017/steedos"
       mongo_oplog_url: "mongodb://mongodb:27017/local"
     storageClass: "resize-sc"
-    data_storage: "1Gi"
+    storage: "1Gi"
     installed_packages_storage: "1Gi"
 ```
 

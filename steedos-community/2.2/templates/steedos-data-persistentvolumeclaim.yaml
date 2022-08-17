@@ -10,6 +10,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.services.steedos.data_storage }}
+      storage: {{ .Values.services.steedos.storage }}
   storageClassName: {{ .Values.storageClass }}
 status: {}

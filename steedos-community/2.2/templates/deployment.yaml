@@ -55,6 +55,8 @@ spec:
               value: {{ .transporter }}
             - name: STEEDOS_TENANT_ENABLE_PASSWORD_LOGIN
               value: {{ quote .enable_password_login }}
+            - name: STEEDOS_INITIAL_PACKAGES
+              value: {{ quote .initial_packages }}
             {{- if eq .cfs.store "S3" }}
             - name: STEEDOS_CFS_AWS_S3_ENDPOINT
               value: {{ .cfs.aws.endpoint }}
